@@ -8,43 +8,61 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.view.View
 import android.widget.Button
+import android.widget.TextView
 
 class MainActivity : AppCompatActivity() {
 
-
-
+    lateinit var timerTextView: TextView
     var timerBinder : TimerService.TimerBinder? = null
-
     val serviceConnection = object: ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             timerBinder = service as TimerService.TimerBinder
+            timerBinder!!.setHandler(timerHandler)
+            isconnected=true
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
             timerBinder = null
+            isconnected=false
         }
 
     }
+    var isconnected=false
+    val timerHandler= Handler(Looper.getMainLooper()){
+        timerTextView.text=it.what.toString()
+        true
+    }
+
+
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        timerTextView=findViewById(R.id.textView)
         bindService(
             Intent(this, TimerService::class.java),
             serviceConnection,
             BIND_AUTO_CREATE
         )
 
-        findViewById<Button>(R.id.startButton).setOnClickListener {
-            timerBinder?.start(100)
+        val button = findViewById<Button>(R.id.startButton)
+
+        button.setOnClickListener {
+            if(isconnected && button.text=="Start"){
+                timerBinder?.start(100)
+                button.text="Pause"
+
+            }
+            else if(isconnected && button.text=="Pause"){
+                timerBinder?.pause()
+                button.text="Start"
+            }
         }
 
-        findViewById<Button>(R.id.pauseButton).setOnClickListener {
-            timerBinder?.pause()
-        }
-        
         findViewById<Button>(R.id.stopButton).setOnClickListener {
             timerBinder?.stop()
         }
